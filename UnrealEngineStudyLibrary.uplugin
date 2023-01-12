@@ -18,7 +18,7 @@
 		{
 			"Name": "UnrealEngineStudyLibrary",
 			"Type": "Runtime",
-			"LoadingPhase": "Default"
+			"LoadingPhase": "PostConfigInit"
 		}
 	]
 }
