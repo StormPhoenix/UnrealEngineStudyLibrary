@@ -84,11 +84,11 @@ public:
 };
 
 IMPLEMENT_SHADER_TYPE(, FSimpleColorShaderVS,
-                        TEXT("/Plugins/UnrealEngineStudyLibrary/Shaders/Private/SimpleColorShader.usf"),
+                        TEXT("/Plugins/UnrealEngineStudyLibrary/Private/SimpleColorShader.usf"),
                         TEXT("MainVS"), SF_Vertex)
 
 IMPLEMENT_SHADER_TYPE(, FSimpleColorShaderPS,
-                        TEXT("/Plugins/UnrealEngineStudyLibrary/Shaders/Private/SimpleColorShader.usf"),
+                        TEXT("/Plugins/UnrealEngineStudyLibrary/Private/SimpleColorShader.usf"),
                         TEXT("MainPS"), SF_Pixel)
 
 void UShaderTestBlueprintLibrary::DrawSimpleColorRenderTarget(

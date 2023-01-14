@@ -8,7 +8,7 @@
 #include "ShaderTestBlueprintLibrary.generated.h"
 
 UCLASS(MinimalAPI, meta=(ScriptName="ShaderTestLibrary"))
-class UNREALENGINESTUDYLIBRARY_API UShaderTestBlueprintLibrary : public UBlueprintFunctionLibrary
+class UShaderTestBlueprintLibrary : public UBlueprintFunctionLibrary
 {
 	GENERATED_UCLASS_BODY()
 	static void DrawSimpleColorRenderTarget(
