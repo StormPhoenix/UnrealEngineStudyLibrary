@@ -12,5 +12,6 @@ class UShaderTestBlueprintLibrary : public UBlueprintFunctionLibrary
 {
 	GENERATED_UCLASS_BODY()
 	static void DrawSimpleColorRenderTarget(
-		class UTextureRenderTarget2D* OutputRenderTarget, AActor* Actor, FLinearColor Color);
+		const UObject* WorldContextObject, class UTextureRenderTarget2D* OutputRenderTarget,
+		AActor* Actor, FLinearColor Color);
 };
