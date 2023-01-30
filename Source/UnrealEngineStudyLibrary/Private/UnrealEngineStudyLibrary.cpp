@@ -8,7 +8,7 @@
 void FUnrealEngineStudyLibraryModule::StartupModule()
 {
 	FString PluginShaderDir = FPaths::Combine(IPluginManager::Get().FindPlugin(TEXT("UnrealEngineStudyLibrary"))->GetBaseDir(), TEXT("Shaders"));
-	AddShaderSourceDirectoryMapping(TEXT("/Plugins/UnrealEngineStudyLibrary"), PluginShaderDir);
+	AddShaderSourceDirectoryMapping(TEXT("/UnrealEngineStudyLibrary"), PluginShaderDir);
 }
 
 void FUnrealEngineStudyLibraryModule::ShutdownModule()

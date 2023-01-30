@@ -11,6 +11,8 @@ UCLASS(MinimalAPI, meta=(ScriptName="ShaderTestLibrary"))
 class UShaderTestBlueprintLibrary : public UBlueprintFunctionLibrary
 {
 	GENERATED_UCLASS_BODY()
+	
+	UFUNCTION(BlueprintCallable, Category = "SimpleColorTest", meta = (WorldContext = "WorldContextObject"))
 	static void DrawSimpleColorRenderTarget(
 		const UObject* WorldContextObject, class UTextureRenderTarget2D* OutputRenderTarget,
 		AActor* Actor, FLinearColor Color);
