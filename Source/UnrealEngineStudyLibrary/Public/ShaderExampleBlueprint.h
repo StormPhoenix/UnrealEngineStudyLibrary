@@ -5,10 +5,10 @@
 #include "CoreMinimal.h"
 #include "UObject/Object.h"
 #include "Engine/Classes/Kismet/BlueprintFunctionLibrary.h"
-#include "ShaderTestBlueprintLibrary.generated.h"
+#include "ShaderExampleBlueprint.generated.h"
 
 UCLASS(MinimalAPI, meta=(ScriptName="ShaderTestLibrary"))
-class UShaderTestBlueprintLibrary : public UBlueprintFunctionLibrary
+class UShaderExampleBlueprintLibrary : public UBlueprintFunctionLibrary
 {
 	GENERATED_UCLASS_BODY()
 	
