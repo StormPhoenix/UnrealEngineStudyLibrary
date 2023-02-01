@@ -14,7 +14,9 @@ UCLASS(MinimalAPI, meta=(ScriptName="AssetValidationUtils"))
 class UAssetValidationUtils : public UBlueprintFunctionLibrary
 {
 	GENERATED_UCLASS_BODY()
-	
 	UFUNCTION(BlueprintCallable, Category = "AssetValidationUtils", meta = (WorldContext = "WorldContextObject"))
 	static void SearchAssetList(const UObject* WorldContextObject);
+
+	UFUNCTION(BlueprintCallable, Category = "AssetValidationUtils", meta = (WorldContext = "WorldContextObject"))
+	static void Test_SpawnStaticMesh(const UObject* WorldContextObject, const FTransform& NewTransform);
 };
