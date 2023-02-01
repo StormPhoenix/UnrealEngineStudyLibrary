@@ -55,7 +55,7 @@ namespace AssetValidationTools
 		JsonWriter->WriteObjectStart();
 
 		// Write 'PackagePath' Array
-		JsonWriter->WriteValue(TEXT("Time"), FDateTime::Now().ToFormattedString(TEXT("yyyy-MM-dd HH:mm:ss")));
+		JsonWriter->WriteValue(TEXT("Time"), FDateTime::Now().ToString(TEXT("%y-%m-%d %H:%M:%S")));
 		JsonWriter->WriteArrayStart("AssetData");
 		for (const FAssetData& AssetData : InAssets)
 		{

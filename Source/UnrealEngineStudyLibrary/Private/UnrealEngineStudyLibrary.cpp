@@ -5,9 +5,12 @@
 
 #define LOCTEXT_NAMESPACE "FUnrealEngineStudyLibraryModule"
 
-FString UnrealStudyGlobalVar::PluginDir = "";
-FString UnrealStudyGlobalVar::PluginContentDir = "";
-FString UnrealStudyGlobalVar::SavedAssetJsonFile = "";
+namespace UnrealStudyGlobalVar
+{
+	FString PluginDir = "";
+	FString PluginContentDir = "";
+	FString SavedAssetJsonFile = "";
+}
 
 void FUnrealEngineStudyLibraryModule::StartupModule()
 {
@@ -19,7 +22,7 @@ void FUnrealEngineStudyLibraryModule::StartupModule()
 	UnrealStudyGlobalVar::PluginDir =
 		FPaths::Combine(FPaths::ProjectPluginsDir(), TEXT("UnrealEngineStudyLibrary"));
 	UnrealStudyGlobalVar::PluginContentDir = FPaths::Combine(UnrealStudyGlobalVar::PluginDir, TEXT("Content"));
-	UnrealStudyGlobalVar::SavedAssetJsonFile = UnrealStudyGlobalVar::PluginContentDir + FString("/SavedAssetsList.json");
+	UnrealStudyGlobalVar::SavedAssetJsonFile = FPaths::Combine(FPaths::ProjectContentDir() + FString("AssetValidation/SavedAssetsList.json"));
 }
 
 void FUnrealEngineStudyLibraryModule::ShutdownModule()
