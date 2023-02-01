@@ -5,10 +5,21 @@
 
 #define LOCTEXT_NAMESPACE "FUnrealEngineStudyLibraryModule"
 
+FString UnrealStudyGlobalVar::PluginDir = "";
+FString UnrealStudyGlobalVar::PluginContentDir = "";
+FString UnrealStudyGlobalVar::SavedAssetJsonFile = "";
+
 void FUnrealEngineStudyLibraryModule::StartupModule()
 {
-	FString PluginShaderDir = FPaths::Combine(IPluginManager::Get().FindPlugin(TEXT("UnrealEngineStudyLibrary"))->GetBaseDir(), TEXT("Shaders"));
+	FString PluginShaderDir = FPaths::Combine(
+		IPluginManager::Get().FindPlugin(TEXT("UnrealEngineStudyLibrary"))->GetBaseDir(), TEXT("Shaders"));
 	AddShaderSourceDirectoryMapping(TEXT("/UnrealEngineStudyLibrary"), PluginShaderDir);
+
+	// 初始化全局变量
+	UnrealStudyGlobalVar::PluginDir =
+		FPaths::Combine(FPaths::ProjectPluginsDir(), TEXT("UnrealEngineStudyLibrary"));
+	UnrealStudyGlobalVar::PluginContentDir = FPaths::Combine(UnrealStudyGlobalVar::PluginDir, TEXT("Content"));
+	UnrealStudyGlobalVar::SavedAssetJsonFile = UnrealStudyGlobalVar::PluginContentDir + FString("/SavedAssetsList.json");
 }
 
 void FUnrealEngineStudyLibraryModule::ShutdownModule()
@@ -18,5 +29,5 @@ void FUnrealEngineStudyLibraryModule::ShutdownModule()
 }
 
 #undef LOCTEXT_NAMESPACE
-	
+
 IMPLEMENT_MODULE(FUnrealEngineStudyLibraryModule, UnrealEngineStudyLibrary)

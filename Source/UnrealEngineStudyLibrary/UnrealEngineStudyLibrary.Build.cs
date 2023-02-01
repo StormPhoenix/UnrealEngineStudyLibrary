@@ -28,7 +28,7 @@ public class UnrealEngineStudyLibrary : ModuleRules
 				"Core",
 				"RenderCore",
 				"RHI",
-				"Projects"
+				"Projects",
 				// ... add other public dependencies that you statically link with here ...
 			}
 			);
@@ -41,6 +41,8 @@ public class UnrealEngineStudyLibrary : ModuleRules
 				"Engine",
 				"Slate",
 				"SlateCore",
+				"Json",
+				"JsonUtilities"
 				// ... add private dependencies that you statically link with here ...	
 			}
 			);
