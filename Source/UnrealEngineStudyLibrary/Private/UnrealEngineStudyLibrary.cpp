@@ -2,6 +2,7 @@
 
 #include "UnrealEngineStudyLibrary.h"
 #include "Interfaces/IPluginManager.h"
+#include "AssetValidationUtils.h"
 
 #define LOCTEXT_NAMESPACE "FUnrealEngineStudyLibraryModule"
 
@@ -23,6 +24,8 @@ void FUnrealEngineStudyLibraryModule::StartupModule()
 		FPaths::Combine(FPaths::ProjectPluginsDir(), TEXT("UnrealEngineStudyLibrary"));
 	UnrealStudyGlobalVar::PluginContentDir = FPaths::Combine(UnrealStudyGlobalVar::PluginDir, TEXT("Content"));
 	UnrealStudyGlobalVar::SavedAssetJsonFile = FPaths::Combine(FPaths::ProjectContentDir() + FString("AssetValidation/SavedAssetsList.json"));
+
+	UAssetValidationUtils::Initialize();
 }
 
 void FUnrealEngineStudyLibraryModule::ShutdownModule()

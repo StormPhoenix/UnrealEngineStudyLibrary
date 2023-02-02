@@ -8,13 +8,59 @@
 #include "AssetRegistry/AssetRegistryModule.h"
 #include "Engine/StaticMeshActor.h"
 #include "Logging/LogMacros.h"
+#include "StringMatchUtils.h"
 
 #define LOCTEXT_NAMESPACE "AssetValidation"
 
 DEFINE_LOG_CATEGORY_STATIC(LogAssetValidationUtils, Verbose, All);
 
+namespace UnrealStudyGlobalVar
+{
+	TMap<EAssetType, FString> GAssetTypeToStrMap;
+	TMap<FString, EAssetType> GStrToAssetTypeMap;
+}
+
 namespace AssetValidationTools
 {
+	void ParseAssetData(const FAssetData& AssetData, FAssetDataInfo& Info)
+	{
+		FString AssetRefPath = AssetData.AssetClass.ToString() + "'" + AssetData.ObjectPath.ToString() + "'";
+		Info.AssetRefPath = AssetRefPath;
+		Info.AssetName = AssetData.AssetName.ToString();
+		Info.AssetClass = AssetData.AssetClass.ToString();
+	}
+
+	FString ParseAssetNameFromType(EAssetType Type)
+	{
+		using namespace UnrealStudyGlobalVar;
+		if (GAssetTypeToStrMap.Contains(Type))
+		{
+			return *(GAssetTypeToStrMap.Find(Type));
+		}
+		return FString("");
+	}
+
+	EAssetType ParseAssetTypeFromName(FString TypeName)
+	{
+		using namespace UnrealStudyGlobalVar;
+		if (!TypeName.IsEmpty() && GStrToAssetTypeMap.Contains(TypeName))
+		{
+			return *GStrToAssetTypeMap.Find(TypeName);
+		}
+		return EAssetType::NotRecognized;
+	}
+
+	bool IsAssetTypeSupported(EAssetType Type)
+	{
+		switch (Type)
+		{
+		case EAssetType::StaticMesh:
+			return true;
+		default:
+			return false;
+		}
+	}
+
 	void ImportAssetListFromJson(const FString& JsonFilePath, TArray<FAssetData>& OutAssets)
 	{
 		FString JsonStr;
@@ -83,13 +129,21 @@ namespace AssetValidationTools
 #endif
 	}
 
-	void SearchAllAssetList_EditorMode(const FName& PackagePath, const FName& ClassName,
-	                                   TArray<FAssetData>& OutAssetData)
+	void SearchAllAssetList_EditorMode(const FName& PackagePath, EAssetType AssetType, TArray<FAssetData>& OutAssetData)
 	{
 #if WITH_EDITOR
 		FARFilter Filter;
 		Filter.PackagePaths.Add(PackagePath);
-		Filter.ClassNames.Add(ClassName);
+
+		if (AssetType != EAssetType::All)
+		{
+			FString AssetClassName = AssetValidationTools::ParseAssetNameFromType(EAssetType::StaticMesh);
+			if (!AssetClassName.IsEmpty())
+			{
+				Filter.ClassNames.Add(FName(*AssetClassName));
+			}
+		}
+
 		Filter.bRecursivePaths = true;
 		Filter.bRecursiveClasses = true;
 
@@ -109,14 +163,11 @@ namespace AssetValidationTools
 		UE_LOG(LogAssetValidationUtils, Verbose, TEXT("SearchAllAssetList_RuntimeMode, %s Asset Found. "),
 		       OutAssetData.Num());
 	}
-}
 
-namespace Test_AssetValidationTools
-{
-	static TWeakObjectPtr<AStaticMeshActor> CurrentActor = nullptr;
+	static TWeakObjectPtr<AStaticMeshActor> SpawnedMeshActor = nullptr;
 
-	void Test_SpawnStaticMesh(const UObject* WorldContextObject, const FString& AssetRefPath,
-	                          const FTransform& Transform)
+	void SpawnStaticMesh(const UObject* WorldContextObject, const FString& AssetRefPath,
+	                     const FTransform& Transform)
 	{
 		if (AssetRefPath.IsEmpty())
 		{
@@ -152,15 +203,21 @@ namespace Test_AssetValidationTools
 			UE_LOG(LogAssetValidationUtils, Display, TEXT("Load Asset: %s"), *(AssetPackage->FileName.ToString()));
 		}
 
-		if (CurrentActor.Get())
+		if (SpawnedMeshActor.Get())
 		{
 			// @todo Actor 从场景中删除的最合适写法是啥
-			CurrentActor->Destroy();
+			SpawnedMeshActor->Destroy();
 		}
 
-		CurrentActor = MyNewActor;
+		SpawnedMeshActor = MyNewActor;
 	}
+}
 
+namespace Test_AssetValidationTools
+{
+	static TWeakObjectPtr<AStaticMeshActor> CurrentActor = nullptr;
+
+	// @todo GAssetRefsInJsonFile 应当作为 Cache 使用
 	static TArray<FString> GAssetRefsInJsonFile;
 
 	static uint8 GAssetRefIndex = 0;
@@ -225,30 +282,47 @@ UAssetValidationUtils::UAssetValidationUtils(const FObjectInitializer& ObjInitia
 {
 }
 
-void UAssetValidationUtils::Test_SpawnStaticMesh(const UObject* WorldContextObject, const FString& AssetRefPath,
-                                                 const FTransform& NewTransform)
-{
-	Test_AssetValidationTools::Test_SpawnStaticMesh(WorldContextObject, AssetRefPath, NewTransform);
-}
-
-void UAssetValidationUtils::SearchAssetList(TArray<FAssetDataInfo>& OutAssetInfo)
+void UAssetValidationUtils::SearchAssetList(TArray<FAssetDataInfo>& OutAssetInfo, const FString SearchKey,
+                                            EAssetType Type)
 {
 	TArray<FAssetData> FoundAssets;
 	// @todo 不限定资产类型以及搜索路径
+	// @todo 每次都需要重新搜索，最好做一个缓存
 #if WITH_EDITOR
-	AssetValidationTools::SearchAllAssetList_EditorMode(FName(TEXT("/Game")), FName(TEXT("StaticMesh")), FoundAssets);
+	AssetValidationTools::SearchAllAssetList_EditorMode(FName(TEXT("/Game")), Type, FoundAssets);
 #else
-	AssetValidationTools::SearchAllAssetList_RuntimeMode(FName(TEXT("/Game")), FName(TEXT("StaticMesh")), FoundAssets);
+	AssetValidationTools::SearchAllAssetList_RuntimeMode(FName(TEXT("/Game")), Type, FoundAssets);
 #endif
 
-	for (const FAssetData& Asset : FoundAssets)
+	if (!SearchKey.IsEmpty())
 	{
-		OutAssetInfo.Add(FAssetDataInfo());
-		FString AssetRefPath = Asset.AssetClass.ToString() + "'" + Asset.ObjectPath.ToString() + "'";
-		OutAssetInfo.Last().AssetRefPath = AssetRefPath;
-		OutAssetInfo.Last().AssetName = Asset.AssetName.ToString();
-		OutAssetInfo.Last().AssetClass = Asset.AssetClass.ToString();
+		TArray<FString> AssetSearchSource;
+		for (const FAssetData& Asset : FoundAssets)
+		{
+			FString AssetName = Asset.AssetName.ToString();
+			AssetSearchSource.Add(AssetName);
+		}
+		TArray<int> FilterIndices;
+		StringMatchUtils::MatchStrings(AssetSearchSource, SearchKey, FilterIndices);
+		for (const int Index : FilterIndices)
+		{
+			OutAssetInfo.Add(FAssetDataInfo());
+			AssetValidationTools::ParseAssetData(FoundAssets[Index], OutAssetInfo.Last());
+		}
 	}
+	else
+	{
+		for (const FAssetData& AssetData : FoundAssets)
+		{
+			OutAssetInfo.Add(FAssetDataInfo());
+			AssetValidationTools::ParseAssetData(AssetData, OutAssetInfo.Last());
+		}
+	}
+}
+
+void UAssetValidationUtils::SearchAllAssetList(TArray<FAssetDataInfo>& OutAssetInfo)
+{
+	SearchAssetList(OutAssetInfo, "", EAssetType::All);
 }
 
 void UAssetValidationUtils::PackageAssetDataToJson()
@@ -256,9 +330,34 @@ void UAssetValidationUtils::PackageAssetDataToJson()
 	TArray<FAssetData> FoundAssets;
 #if WITH_EDITOR
 	// @todo 不限定资产类型以及搜索路径
-	AssetValidationTools::SearchAllAssetList_EditorMode(FName(TEXT("/Game")), FName(TEXT("StaticMesh")), FoundAssets);
+	AssetValidationTools::SearchAllAssetList_EditorMode(FName(TEXT("/Game")), EAssetType::All, FoundAssets);
 	AssetValidationTools::ExportAssetListToJson(FoundAssets, UnrealStudyGlobalVar::SavedAssetJsonFile);
 #endif
+}
+
+void UAssetValidationUtils::SpawnActorFromAsset(const UObject* WorldContextObject, const FAssetDataInfo& AssetDataInfo,
+                                                const FTransform& NewTransform)
+{
+	EAssetType AssetType = AssetValidationTools::ParseAssetTypeFromName(AssetDataInfo.AssetClass);
+	switch (AssetType)
+	{
+	case EAssetType::StaticMesh:
+		AssetValidationTools::SpawnStaticMesh(WorldContextObject, AssetDataInfo.AssetRefPath, NewTransform);
+		break;
+	default:
+		UE_LOG(LogAssetValidationUtils, Warning, TEXT("Asset type %s not supported."), *AssetDataInfo.AssetClass);
+		break;
+	}
+}
+
+
+void UAssetValidationUtils::Initialize()
+{
+	UnrealStudyGlobalVar::GAssetTypeToStrMap.Add(EAssetType::StaticMesh, FString("StaticMesh"));
+	UnrealStudyGlobalVar::GAssetTypeToStrMap.Add(EAssetType::All, FString(""));
+
+	UnrealStudyGlobalVar::GStrToAssetTypeMap.Add(FString("StaticMesh"), EAssetType::StaticMesh);
+	UnrealStudyGlobalVar::GStrToAssetTypeMap.Add(FString("All"), EAssetType::All);
 }
 
 
