@@ -35,10 +35,10 @@ namespace ShaderExample
 			Vertices[2].Position = FVector4f(1, -1, 0, 1);
 			Vertices[3].Position = FVector4f(-1, -1, 0, 1);
 
-			Vertices[0].UV = FVector2f(1.0f, 1.0f);
-			Vertices[1].UV = FVector2f(0.0f, 1.0f);
-			Vertices[2].UV = FVector2f(1.0f, 0.0f);
-			Vertices[3].UV = FVector2f(0.0f, 0.0f);
+			Vertices[0].UV = FVector2f(1.0f, 0.0f);
+			Vertices[1].UV = FVector2f(0.0f, 0.0f);
+			Vertices[2].UV = FVector2f(1.0f, 1.0f);
+			Vertices[3].UV = FVector2f(0.0f, 1.0f);
 
 			FRHIResourceCreateInfo CreateInfo(TEXT("FMyVertexBuffer"), &Vertices);
 			VertexBufferRHI = RHICreateVertexBuffer(Vertices.GetResourceDataSize(), BUF_Static, CreateInfo);
@@ -147,41 +147,41 @@ namespace ShaderExample
 		LAYOUT_FIELD(FShaderResourceParameter, MyTextureSamplerVal);
 	};
 
-	class FSimpleColorShaderVS : public FSimpleExampleShader
+	class FSimpleExampleShaderVS : public FSimpleExampleShader
 	{
 	public:
-		DECLARE_GLOBAL_SHADER(FSimpleColorShaderVS);
+		DECLARE_GLOBAL_SHADER(FSimpleExampleShaderVS);
 
-		FSimpleColorShaderVS()
+		FSimpleExampleShaderVS()
 		{
 		}
 
-		FSimpleColorShaderVS(const ShaderMetaType::CompiledShaderInitializerType& Initializer):
+		FSimpleExampleShaderVS(const ShaderMetaType::CompiledShaderInitializerType& Initializer):
 			FSimpleExampleShader(Initializer)
 		{
 		}
 	};
 
-	class FSimpleColorShaderPS : public FSimpleExampleShader
+	class FSimpleExampleShaderPS : public FSimpleExampleShader
 	{
 	public:
-		DECLARE_GLOBAL_SHADER(FSimpleColorShaderPS);
+		DECLARE_GLOBAL_SHADER(FSimpleExampleShaderPS);
 
-		FSimpleColorShaderPS()
+		FSimpleExampleShaderPS()
 		{
 		}
 
-		FSimpleColorShaderPS(const ShaderMetaType::CompiledShaderInitializerType& Initializer):
+		FSimpleExampleShaderPS(const ShaderMetaType::CompiledShaderInitializerType& Initializer):
 			FSimpleExampleShader(Initializer)
 		{
 		}
 	};
 
 	IMPLEMENT_GLOBAL_SHADER(
-		FSimpleColorShaderVS, "/UnrealEngineStudyLibrary/Private/SimpleExampleShader.usf", "MainVS", SF_Vertex);
+		FSimpleExampleShaderVS, "/UnrealEngineStudyLibrary/Private/SimpleExampleShader.usf", "MainVS", SF_Vertex);
 
 	IMPLEMENT_GLOBAL_SHADER(
-		FSimpleColorShaderPS, "/UnrealEngineStudyLibrary/Private/SimpleExampleShader.usf", "MainPS", SF_Pixel);
+		FSimpleExampleShaderPS, "/UnrealEngineStudyLibrary/Private/SimpleExampleShader.usf", "MainPS", SF_Pixel);
 
 	static void DrawSimpleColorRenderTarget_RenderThread(
 		FRHICommandListImmediate& RHICmdList, FTextureRenderTargetResource* OutputRenderTargetResource,
@@ -197,8 +197,8 @@ namespace ShaderExample
 		{
 			// 获取着色器
 			FGlobalShaderMap* GlobalShaderMap = GetGlobalShaderMap(FeatureLevel);
-			TShaderMapRef<FSimpleColorShaderVS> VertexShader(GlobalShaderMap);
-			TShaderMapRef<FSimpleColorShaderPS> PixelShader(GlobalShaderMap);
+			TShaderMapRef<FSimpleExampleShaderVS> VertexShader(GlobalShaderMap);
+			TShaderMapRef<FSimpleExampleShaderPS> PixelShader(GlobalShaderMap);
 
 			FMyVertexDeclaration VertexDeclaration;
 			VertexDeclaration.InitRHI();

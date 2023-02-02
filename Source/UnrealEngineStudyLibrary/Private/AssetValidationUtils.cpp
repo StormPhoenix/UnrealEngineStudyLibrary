@@ -108,7 +108,7 @@ namespace Test_AssetValidationTools
 
 	static uint8 GAssetRefIndex = 0;
 
-	static AStaticMeshActor* CurrentActor = nullptr;
+	static TWeakObjectPtr<AStaticMeshActor> CurrentActor = nullptr;
 
 	void Test_SpawnStaticMesh(const UObject* WorldContextObject, const FTransform& Transform)
 	{
@@ -156,8 +156,9 @@ namespace Test_AssetValidationTools
 			       *(TestPkg->FileName.ToString()));
 		}
 
-		if (CurrentActor != nullptr)
+		if (CurrentActor.Get())
 		{
+			// @todo Actor 从场景中删除的最合适写法是啥
 			CurrentActor->Destroy();
 		}
 
