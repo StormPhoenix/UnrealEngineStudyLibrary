@@ -5,7 +5,7 @@
 #include "CoreMinimal.h"
 #include "UObject/Object.h"
 #include "Engine/Classes/Kismet/BlueprintFunctionLibrary.h"
-#include "AssetValidationUtils.generated.h"
+#include "AssetValidationBlueprint.generated.h"
 
 
 USTRUCT(BlueprintType)
@@ -31,7 +31,6 @@ enum class EAssetType : uint8
 	NotRecognized UMETA(DisplayName="NotRecognized"),
 };
 
-
 namespace UnrealStudyGlobalVar
 {
 	extern TMap<EAssetType, FString> GAssetTypeToStrMap;
@@ -42,7 +41,7 @@ namespace UnrealStudyGlobalVar
  * Asset Validation Tools
  */
 UCLASS(MinimalAPI, meta=(ScriptName="AssetValidationUtils"))
-class UAssetValidationUtils : public UBlueprintFunctionLibrary
+class UAssetValidationBPLibrary: public UBlueprintFunctionLibrary
 {
 	GENERATED_UCLASS_BODY()
 	UFUNCTION(BlueprintCallable, Category = "AssetValidationUtils", meta = (WorldContext = "WorldContextObject"))
@@ -59,5 +58,6 @@ class UAssetValidationUtils : public UBlueprintFunctionLibrary
 	static void SpawnActorFromAsset(const UObject* WorldContextObject, const FAssetDataInfo& AssetDataInfo,
 	                                const FTransform& NewTransform);
 
+	// @todo 做一个单独的类，拉取出来，不要放在 BP 代码里面
 	static void Initialize();
 };

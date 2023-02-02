@@ -1,7 +1,7 @@
 ﻿// Fill out your copyright notice in the Description page of Project Settings.
 
 
-#include "AssetValidationUtils.h"
+#include "AssetValidationBlueprint.h"
 
 #include "UnrealEngineStudyLibrary.h"
 #include "AssetRegistry/IAssetRegistry.h"
@@ -278,11 +278,11 @@ namespace Test_AssetValidationTools
 	}
 }
 
-UAssetValidationUtils::UAssetValidationUtils(const FObjectInitializer& ObjInitializer): Super(ObjInitializer)
+UAssetValidationBPLibrary::UAssetValidationBPLibrary(const FObjectInitializer& ObjInitializer): Super(ObjInitializer)
 {
 }
 
-void UAssetValidationUtils::SearchAssetList(TArray<FAssetDataInfo>& OutAssetInfo, const FString SearchKey,
+void UAssetValidationBPLibrary::SearchAssetList(TArray<FAssetDataInfo>& OutAssetInfo, const FString SearchKey,
                                             EAssetType Type)
 {
 	TArray<FAssetData> FoundAssets;
@@ -320,12 +320,12 @@ void UAssetValidationUtils::SearchAssetList(TArray<FAssetDataInfo>& OutAssetInfo
 	}
 }
 
-void UAssetValidationUtils::SearchAllAssetList(TArray<FAssetDataInfo>& OutAssetInfo)
+void UAssetValidationBPLibrary::SearchAllAssetList(TArray<FAssetDataInfo>& OutAssetInfo)
 {
 	SearchAssetList(OutAssetInfo, "", EAssetType::All);
 }
 
-void UAssetValidationUtils::PackageAssetDataToJson()
+void UAssetValidationBPLibrary::PackageAssetDataToJson()
 {
 	TArray<FAssetData> FoundAssets;
 #if WITH_EDITOR
@@ -335,7 +335,7 @@ void UAssetValidationUtils::PackageAssetDataToJson()
 #endif
 }
 
-void UAssetValidationUtils::SpawnActorFromAsset(const UObject* WorldContextObject, const FAssetDataInfo& AssetDataInfo,
+void UAssetValidationBPLibrary::SpawnActorFromAsset(const UObject* WorldContextObject, const FAssetDataInfo& AssetDataInfo,
                                                 const FTransform& NewTransform)
 {
 	EAssetType AssetType = AssetValidationTools::ParseAssetTypeFromName(AssetDataInfo.AssetClass);
@@ -350,8 +350,7 @@ void UAssetValidationUtils::SpawnActorFromAsset(const UObject* WorldContextObjec
 	}
 }
 
-
-void UAssetValidationUtils::Initialize()
+void UAssetValidationBPLibrary::Initialize()
 {
 	UnrealStudyGlobalVar::GAssetTypeToStrMap.Add(EAssetType::StaticMesh, FString("StaticMesh"));
 	UnrealStudyGlobalVar::GAssetTypeToStrMap.Add(EAssetType::All, FString(""));

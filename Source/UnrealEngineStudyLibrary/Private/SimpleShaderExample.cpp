@@ -1,6 +1,7 @@
 ﻿// Fill out your copyright notice in the Description page of Project Settings.
 
 
+#include "SimpleShaderExample.h"
 #include "ShaderExampleBlueprint.h"
 #include "GlobalShader.h"
 #include "Engine/TextureRenderTarget2D.h"
@@ -12,7 +13,7 @@ UShaderExampleBlueprintLibrary::UShaderExampleBlueprintLibrary(const FObjectInit
 {
 }
 
-namespace ShaderExample
+namespace SimpleShaderExample
 {
 	// 自定义顶点数据
 	struct FMyVertex
@@ -42,24 +43,6 @@ namespace ShaderExample
 
 			FRHIResourceCreateInfo CreateInfo(TEXT("FMyVertexBuffer"), &Vertices);
 			VertexBufferRHI = RHICreateVertexBuffer(Vertices.GetResourceDataSize(), BUF_Static, CreateInfo);
-
-			/*
-			FRHIResourceCreateInfo CreateInfo(TEXT("FMyVertexBuffer"));
-			VertexBufferRHI = RHICreateVertexBuffer(sizeof(FMyVertex) * 4, BUF_Static, CreateInfo);
-			void* VoidPtr = RHILockBuffer(VertexBufferRHI, 0, sizeof(FMyVertex) * 4, RLM_WriteOnly);
-			static FMyVertex Vertices[4];
-			Vertices[0].Position = FVector4(1, 1, 0, 1);
-			Vertices[1].Position = FVector4(-1, 1, 0, 1);
-			Vertices[2].Position = FVector4(1, -1, 0, 1);
-			Vertices[3].Position = FVector4(-1, -1, 0, 1);
-			
-			Vertices[0].UV = FVector2f(1.0f, 1.0f);
-			Vertices[1].UV = FVector2f(0.0f, 1.0f);
-			Vertices[2].UV = FVector2f(1.0f, 0.0f);
-			Vertices[3].UV = FVector2f(0.0f, 0.0f);
-			FMemory::Memcpy(VoidPtr, Vertices, sizeof(FMyVertex) * 4);
-			RHIUnlockBuffer(VertexBufferRHI);
-			*/
 		}
 	};
 
@@ -134,11 +117,25 @@ namespace ShaderExample
 
 		template <typename TRHIShader>
 		void SetParameters(FRHICommandListImmediate& RHICmdList, const TRHIShader ShaderRHI,
-		                   const FLinearColor& InColor, FTexture2DRHIRef InTexture)
+		                   const FLinearColor& InColor, FTexture2DRHIRef InTexture,
+		                   FSimpleShaderParameter& ShaderParameter)
 		{
+			// 设置 float 类型数据
 			SetShaderValue(RHICmdList, ShaderRHI, MyColorVal, InColor);
+
+			// 设置 texture 类型数据
 			SetTextureParameter(RHICmdList, ShaderRHI, MyTextureVal, MyTextureSamplerVal,
 			                    TStaticSamplerState<SF_Trilinear, AM_Clamp, AM_Clamp, AM_Clamp>::GetRHI(), InTexture);
+
+			FSimpleUniformStructParameters SimpleUniformData;
+			SimpleUniformData.Color1 = ShaderParameter.Color1;
+			SimpleUniformData.Color2 = ShaderParameter.Color2;
+			SimpleUniformData.Color3 = ShaderParameter.Color3;
+			SimpleUniformData.Color4 = ShaderParameter.Color4;
+			SimpleUniformData.ColorIndex = ShaderParameter.ColorIndex;
+			SetUniformBufferParameterImmediate(
+				RHICmdList, ShaderRHI, GetUniformBufferParameter<FSimpleUniformStructParameters>(),
+				SimpleUniformData);
 		}
 
 	private:
@@ -177,6 +174,8 @@ namespace ShaderExample
 		}
 	};
 
+	IMPLEMENT_GLOBAL_SHADER_PARAMETER_STRUCT(FSimpleUniformStructParameters, "SimpleUniformStruct");
+
 	IMPLEMENT_GLOBAL_SHADER(
 		FSimpleExampleShaderVS, "/UnrealEngineStudyLibrary/Private/SimpleExampleShader.usf", "MainVS", SF_Vertex);
 
@@ -185,7 +184,8 @@ namespace ShaderExample
 
 	static void DrawSimpleColorRenderTarget_RenderThread(
 		FRHICommandListImmediate& RHICmdList, FTextureRenderTargetResource* OutputRenderTargetResource,
-		ERHIFeatureLevel::Type FeatureLevel, FLinearColor InColor, FTexture2DRHIRef InTexture)
+		ERHIFeatureLevel::Type FeatureLevel, FLinearColor InColor, FTexture2DRHIRef InTexture,
+		FSimpleShaderParameter ShaderStructData)
 	{
 		check(IsInRenderingThread());
 
@@ -217,7 +217,7 @@ namespace ShaderExample
 
 			RHICmdList.SetViewport(0, 0, 0, OutputRenderTargetResource->GetSizeX(),
 			                       OutputRenderTargetResource->GetSizeY(), 1.0f);
-			PixelShader->SetParameters(RHICmdList, PixelShader.GetPixelShader(), InColor, InTexture);
+			PixelShader->SetParameters(RHICmdList, PixelShader.GetPixelShader(), InColor, InTexture, ShaderStructData);
 			RHICmdList.SetStreamSource(0, GMyVertexBuffer.VertexBufferRHI, 0);
 			RHICmdList.DrawIndexedPrimitive(GMyIndexBuffer.IndexBufferRHI, 0, 0, 4, 0, 2, 1);
 		}
@@ -228,7 +228,7 @@ namespace ShaderExample
 
 void UShaderExampleBlueprintLibrary::DrawSimpleColorRenderTarget(
 	const UObject* WorldContextObject, UTextureRenderTarget2D* OutputRenderTarget,
-	FLinearColor InColor, UTexture2D* InTexture)
+	FLinearColor InColor, UTexture2D* InTexture, FSimpleShaderParameter ShaderStructData)
 {
 	check(IsInGameThread());
 
@@ -245,10 +245,11 @@ void UShaderExampleBlueprintLibrary::DrawSimpleColorRenderTarget(
 	ERHIFeatureLevel::Type FeatureLevel = World->Scene->GetFeatureLevel();
 	FName TextureRenderTargetName = OutputRenderTarget->GetFName();
 	ENQUEUE_RENDER_COMMAND(CaptureCommand)(
-		[TextureRenderTargetResource, FeatureLevel, InColor, TextureRHI](FRHICommandListImmediate& RHICmdList)
+		[TextureRenderTargetResource, FeatureLevel, InColor, TextureRHI,
+			ShaderStructData](FRHICommandListImmediate& RHICmdList)
 		{
-			ShaderExample::DrawSimpleColorRenderTarget_RenderThread(RHICmdList, TextureRenderTargetResource,
-			                                                        FeatureLevel, InColor, TextureRHI);
+			SimpleShaderExample::DrawSimpleColorRenderTarget_RenderThread(
+				RHICmdList, TextureRenderTargetResource, FeatureLevel, InColor, TextureRHI, ShaderStructData);
 		}
 	);
 }
