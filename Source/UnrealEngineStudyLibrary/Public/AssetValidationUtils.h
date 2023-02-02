@@ -7,6 +7,22 @@
 #include "Engine/Classes/Kismet/BlueprintFunctionLibrary.h"
 #include "AssetValidationUtils.generated.h"
 
+
+USTRUCT(BlueprintType)
+struct FAssetDataInfo
+{
+	GENERATED_BODY()
+
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category="AssetValidationUtils")
+	FString AssetRefPath;
+
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category="AssetValidationUtils")
+	FString AssetName;
+
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category="AssetValidationUtils")
+	FString AssetClass;
+};
+
 /**
  * Asset Validation Tools
  */
@@ -15,8 +31,12 @@ class UAssetValidationUtils : public UBlueprintFunctionLibrary
 {
 	GENERATED_UCLASS_BODY()
 	UFUNCTION(BlueprintCallable, Category = "AssetValidationUtils", meta = (WorldContext = "WorldContextObject"))
-	static void SearchAssetList(const UObject* WorldContextObject);
+	static void SearchAssetList(TArray<FAssetDataInfo>& OutAssetInfo);
 
 	UFUNCTION(BlueprintCallable, Category = "AssetValidationUtils", meta = (WorldContext = "WorldContextObject"))
-	static void Test_SpawnStaticMesh(const UObject* WorldContextObject, const FTransform& NewTransform);
+	static void PackageAssetDataToJson();
+
+	UFUNCTION(BlueprintCallable, Category = "AssetValidationUtils", meta = (WorldContext = "WorldContextObject"))
+	static void Test_SpawnStaticMesh(const UObject* WorldContextObject, const FString& AssetRefPath,
+	                                 const FTransform& NewTransform);
 };
