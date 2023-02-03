@@ -2,6 +2,7 @@
 
 
 #include "AssetValidationUtils.h"
+#include "AssetInfoCollector.h"
 #include "AssetValidationBlueprint.h"
 
 #include "UnrealEngineStudyLibrary.h"
@@ -167,41 +168,21 @@ namespace AssetValidationTools
 
 	static TWeakObjectPtr<AStaticMeshActor> SpawnedMeshActor = nullptr;
 
-	void SpawnStaticMesh(const UObject* WorldContextObject, const FString& AssetRefPath,
-	                     const FTransform& Transform)
+	void SpawnStaticMesh(const UObject* WorldContext, UStaticMesh* StaticMesh, const FTransform& InTransform)
 	{
-		if (AssetRefPath.IsEmpty())
+		if (StaticMesh == nullptr)
 		{
-			UE_LOG(LogAssetValidationUtils, Warning, TEXT("Load Asset failed, asset path empty. "));
 			return;
 		}
 
-		AStaticMeshActor* MyNewActor = WorldContextObject->GetWorld()->SpawnActor<AStaticMeshActor>(
-			AStaticMeshActor::StaticClass());
-		MyNewActor->SetActorTransform(Transform);
+		AStaticMeshActor* MyNewActor =
+			WorldContext->GetWorld()->SpawnActor<AStaticMeshActor>(AStaticMeshActor::StaticClass());
+		MyNewActor->SetActorTransform(InTransform);
 		MyNewActor->SetMobility(EComponentMobility::Stationary);
 		UStaticMeshComponent* MeshComponent = MyNewActor->GetStaticMeshComponent();
 		if (MeshComponent)
 		{
-			UStaticMesh* Mesh = nullptr;
-			{
-				Mesh = LoadObject<UStaticMesh>(nullptr, *AssetRefPath);
-				// @todo 需要判空
-				check(Mesh != nullptr);
-			}
-
-			if (Mesh != nullptr)
-			{
-				MeshComponent->SetStaticMesh(Mesh);
-			}
-			else
-			{
-				UE_LOG(LogAssetValidationUtils, Warning, TEXT("Load Asset failed, asset path %s."), *AssetRefPath);
-				return;
-			}
-
-			auto AssetPackage = Mesh->GetPackage();
-			UE_LOG(LogAssetValidationUtils, Display, TEXT("Load Asset: %s"), *(AssetPackage->FileName.ToString()));
+			MeshComponent->SetStaticMesh(StaticMesh);
 		}
 
 		if (SpawnedMeshActor.Get())
@@ -209,8 +190,32 @@ namespace AssetValidationTools
 			// @todo Actor 从场景中删除的最合适写法是啥
 			SpawnedMeshActor->Destroy();
 		}
-
 		SpawnedMeshActor = MyNewActor;
+	}
+
+	void CreateStaticMeshActor(const UObject* WorldContext, const FString& AssetRefPath,
+	                           const FTransform& InTransform, FAssetDisplayInfo& OutInfo)
+	{
+		if (AssetRefPath.IsEmpty())
+		{
+			UE_LOG(LogAssetValidationUtils, Warning, TEXT("Load Asset failed, asset path empty. "));
+			return;
+		}
+
+		UStaticMesh* Mesh = LoadObject<UStaticMesh>(nullptr, *AssetRefPath);
+		if (Mesh == nullptr)
+		{
+			UE_LOG(LogAssetValidationUtils, Warning, TEXT("Load Asset failed, asset path %s."), *AssetRefPath);
+			return;
+		}
+
+		{
+			auto AssetPackage = Mesh->GetPackage();
+			UE_LOG(LogAssetValidationUtils, Display, TEXT("Load Asset: %s"), *(AssetPackage->FileName.ToString()));
+		}
+
+		AssetInfoCollector::CollectAssetInfo<UStaticMesh>(Mesh, OutInfo);
+		SpawnStaticMesh(WorldContext, Mesh, InTransform);
 	}
 }
 
@@ -284,8 +289,9 @@ UAssetValidationBPLibrary::UAssetValidationBPLibrary(const FObjectInitializer& O
 }
 
 void UAssetValidationBPLibrary::SearchAssetList(TArray<FAssetDataInfo>& OutAssetInfo, const FString SearchKey,
-                                            EAssetType Type)
+                                                EAssetType Type)
 {
+	OutAssetInfo.Empty();
 	TArray<FAssetData> FoundAssets;
 	// @todo 不限定资产类型以及搜索路径
 	// @todo 每次都需要重新搜索，最好做一个缓存
@@ -336,14 +342,19 @@ void UAssetValidationBPLibrary::PackageAssetDataToJson()
 #endif
 }
 
-void UAssetValidationBPLibrary::SpawnActorFromAsset(const UObject* WorldContextObject, const FAssetDataInfo& AssetDataInfo,
-                                                const FTransform& NewTransform)
+void UAssetValidationBPLibrary::SpawnActorFromAsset(
+	const UObject* WorldContext, const FAssetDataInfo& AssetDataInfo,
+	const FTransform& NewTransform, FAssetDisplayInfo& OutDisplayInfo)
 {
+	OutDisplayInfo.DisplayKeys.Empty();
+	OutDisplayInfo.DisplayValues.Empty();
+
 	EAssetType AssetType = AssetValidationTools::ParseAssetTypeFromName(AssetDataInfo.AssetClass);
 	switch (AssetType)
 	{
 	case EAssetType::StaticMesh:
-		AssetValidationTools::SpawnStaticMesh(WorldContextObject, AssetDataInfo.AssetRefPath, NewTransform);
+		AssetValidationTools::CreateStaticMeshActor(
+			WorldContext, AssetDataInfo.AssetRefPath, NewTransform, OutDisplayInfo);
 		break;
 	default:
 		UE_LOG(LogAssetValidationUtils, Warning, TEXT("Asset type %s not supported."), *AssetDataInfo.AssetClass);

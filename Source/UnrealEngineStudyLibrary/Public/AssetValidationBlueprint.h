@@ -12,20 +12,20 @@
  * Asset Validation Tools
  */
 UCLASS(MinimalAPI, meta=(ScriptName="AssetValidationUtils"))
-class UAssetValidationBPLibrary: public UBlueprintFunctionLibrary
+class UAssetValidationBPLibrary : public UBlueprintFunctionLibrary
 {
 	GENERATED_UCLASS_BODY()
-	UFUNCTION(BlueprintCallable, Category = "AssetValidationUtils", meta = (WorldContext = "WorldContextObject"))
+	UFUNCTION(BlueprintCallable, Category = "AssetValidationUtils")
 	static void SearchAllAssetList(TArray<FAssetDataInfo>& OutAssetInfo);
 
-	UFUNCTION(BlueprintCallable, Category = "AssetValidationUtils", meta = (WorldContext = "WorldContextObject"))
+	UFUNCTION(BlueprintCallable, Category = "AssetValidationUtils")
 	static void SearchAssetList(TArray<FAssetDataInfo>& OutAssetInfo, const FString SearchKey = "",
 	                            EAssetType SearchType = EAssetType::All);
 
-	UFUNCTION(BlueprintCallable, Category = "AssetValidationUtils", meta = (WorldContext = "WorldContextObject"))
+	UFUNCTION(BlueprintCallable, Category = "AssetValidationUtils")
 	static void PackageAssetDataToJson();
 
-	UFUNCTION(BlueprintCallable, Category = "AssetValidationUtils", meta = (WorldContext = "WorldContextObject"))
-	static void SpawnActorFromAsset(const UObject* WorldContextObject, const FAssetDataInfo& AssetDataInfo,
-	                                const FTransform& NewTransform);
+	UFUNCTION(BlueprintCallable, Category = "AssetValidationUtils", meta = (WorldContext = "WorldContext"))
+	static void SpawnActorFromAsset(const UObject* WorldContext, const FAssetDataInfo& AssetDataInfo,
+	                                const FTransform& NewTransform, FAssetDisplayInfo& OutDisplayInfo);
 };

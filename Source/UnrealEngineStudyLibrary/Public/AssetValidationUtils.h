@@ -19,6 +19,24 @@ struct FAssetDataInfo
 	FString AssetClass;
 };
 
+USTRUCT(BlueprintType)
+struct FAssetDisplayInfo
+{
+	GENERATED_BODY()
+
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category="AssetValidationUtils")
+	TArray<FString> DisplayKeys;
+
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category="AssetValidationUtils")
+	TArray<FString> DisplayValues;
+
+	void AddInfo(FString& Key, FString& Value)
+	{
+		DisplayKeys.Add(Key);
+		DisplayValues.Add(Value);
+	}
+};
+
 UENUM(BlueprintType)
 enum class EAssetType : uint8
 {
