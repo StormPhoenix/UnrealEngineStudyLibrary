@@ -30,7 +30,7 @@ struct FAssetDisplayInfo
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category="AssetValidationUtils")
 	TArray<FString> DisplayValues;
 
-	void AddInfo(FString& Key, FString& Value)
+	void AddInfo(FString Key, FString Value)
 	{
 		DisplayKeys.Add(Key);
 		DisplayValues.Add(Value);
