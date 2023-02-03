@@ -5,7 +5,7 @@
 #include "CoreMinimal.h"
 #include "UObject/Object.h"
 #include "Engine/Classes/Kismet/BlueprintFunctionLibrary.h"
-#include "SimpleShaderExample.h"
+#include "ShaderExample.h"
 #include "ShaderExampleBlueprint.generated.h"
 
 UCLASS(MinimalAPI, meta=(ScriptName="ShaderTestLibrary"))

@@ -1,6 +1,7 @@
 ﻿// Fill out your copyright notice in the Description page of Project Settings.
 
 
+#include "AssetValidationUtils.h"
 #include "AssetValidationBlueprint.h"
 
 #include "UnrealEngineStudyLibrary.h"
@@ -350,7 +351,7 @@ void UAssetValidationBPLibrary::SpawnActorFromAsset(const UObject* WorldContextO
 	}
 }
 
-void UAssetValidationBPLibrary::Initialize()
+void AssetValidationTools::Initialize()
 {
 	UnrealStudyGlobalVar::GAssetTypeToStrMap.Add(EAssetType::StaticMesh, FString("StaticMesh"));
 	UnrealStudyGlobalVar::GAssetTypeToStrMap.Add(EAssetType::All, FString(""));

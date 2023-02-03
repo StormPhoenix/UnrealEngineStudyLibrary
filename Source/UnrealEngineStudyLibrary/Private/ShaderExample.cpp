@@ -1,7 +1,7 @@
 ﻿// Fill out your copyright notice in the Description page of Project Settings.
 
 
-#include "SimpleShaderExample.h"
+#include "ShaderExample.h"
 #include "ShaderExampleBlueprint.h"
 #include "GlobalShader.h"
 #include "Engine/TextureRenderTarget2D.h"
@@ -13,7 +13,7 @@ UShaderExampleBlueprintLibrary::UShaderExampleBlueprintLibrary(const FObjectInit
 {
 }
 
-namespace SimpleShaderExample
+namespace ShaderExample
 {
 	// 自定义顶点数据
 	struct FMyVertex
@@ -248,7 +248,7 @@ void UShaderExampleBlueprintLibrary::DrawSimpleColorRenderTarget(
 		[TextureRenderTargetResource, FeatureLevel, InColor, TextureRHI,
 			ShaderStructData](FRHICommandListImmediate& RHICmdList)
 		{
-			SimpleShaderExample::DrawSimpleColorRenderTarget_RenderThread(
+			ShaderExample::DrawSimpleColorRenderTarget_RenderThread(
 				RHICmdList, TextureRenderTargetResource, FeatureLevel, InColor, TextureRHI, ShaderStructData);
 		}
 	);

@@ -3,7 +3,7 @@
 #include "CoreMinimal.h"
 #include "UObject/ObjectMacros.h"
 #include "Kismet/BlueprintFunctionLibrary.h"
-#include "SimpleShaderExample.generated.h"
+#include "ShaderExample.generated.h"
 
 USTRUCT(BlueprintType, meta = (ScriptName = "SimpleShaderExample"))
 struct FSimpleShaderParameter
@@ -26,7 +26,7 @@ struct FSimpleShaderParameter
 	int32 ColorIndex;
 };
 
-namespace SimpleShaderExample
+namespace ShaderExample
 {
 	BEGIN_GLOBAL_SHADER_PARAMETER_STRUCT(FSimpleUniformStructParameters,)
 		SHADER_PARAMETER(FVector4f, Color1)
