@@ -21,13 +21,12 @@ namespace AssetInfoCollector
 				const FStaticMeshLODResources& LODModel = StaticMesh->GetRenderData()->LODResources[0];
 				const int32 NumVerts = LODModel.GetNumVertices();
 				const int32 NumTris = LODModel.GetNumTriangles();
-				const int32 NumUVChannels = StaticMesh->GetNumUVChannels(0);
 
 				Value = FText::Format(
 					NSLOCTEXT("AssetValidation", "Vertices_F", "{0}"),
 					FText::AsNumber(NumVerts)).ToString();
 				OutDisplayInfo.AddInfo(FString("Vertices"), Value);
-				
+
 				Value = FText::Format(
 					NSLOCTEXT("AssetValidation", "Triangles_F", "{0}"),
 					FText::AsNumber(NumTris)).ToString();
@@ -37,16 +36,18 @@ namespace AssetInfoCollector
 					NSLOCTEXT("AssetValidation", "LODs_F", "{0}"),
 					FText::AsNumber(LODNum)).ToString();
 				OutDisplayInfo.AddInfo(FString("LODs"), Value);
-				
+
 				Value = FText::Format(
 					NSLOCTEXT("AssetValidation", "Materials_F", "{0}"),
 					FText::AsNumber(MatNum)).ToString();
 				OutDisplayInfo.AddInfo(FString("Materials"), Value);
-				
+#if WITH_EDITOR
+				const int32 NumUVChannels = StaticMesh->GetNumUVChannels(0);
 				Value = FText::Format(
 					NSLOCTEXT("AssetValidation", "UVChannels_F", "{0}"),
 					FText::AsNumber(NumUVChannels)).ToString();
 				OutDisplayInfo.AddInfo(FString("UV Channels"), Value);
+#endif
 			}
 
 			{

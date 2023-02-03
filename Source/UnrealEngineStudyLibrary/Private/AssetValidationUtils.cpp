@@ -63,7 +63,9 @@ namespace AssetValidationTools
 		}
 	}
 
-	void ImportAssetListFromJson(const FString& JsonFilePath, TArray<FAssetData>& OutAssets)
+	typedef TFunction<bool(FAssetData&)> FAssetFilter;
+
+	void ImportAssetListFromJson(const FString& JsonFilePath, FAssetFilter Filter, TArray<FAssetData>& OutAssets)
 	{
 		FString JsonStr;
 		bool bReadSuccess = FFileHelper::LoadFileToString(JsonStr, *JsonFilePath);
@@ -85,12 +87,17 @@ namespace AssetValidationTools
 		TArray<TSharedPtr<FJsonValue>> JsonAssetData = JsonObject->GetArrayField("AssetData");
 		for (int i = 0; i < JsonAssetData.Num(); i ++)
 		{
-			OutAssets.Add(FAssetData());
-			OutAssets.Last().ObjectPath = FName(*(JsonAssetData[i]->AsObject()->GetStringField("ObjectPath")));
-			OutAssets.Last().PackageName = FName(*(JsonAssetData[i]->AsObject()->GetStringField("PackageName")));
-			OutAssets.Last().PackagePath = FName(*(JsonAssetData[i]->AsObject()->GetStringField("PackagePath")));
-			OutAssets.Last().AssetName = FName(*(JsonAssetData[i]->AsObject()->GetStringField("AssetName")));
-			OutAssets.Last().AssetClass = FName(*(JsonAssetData[i]->AsObject()->GetStringField("AssetClass")));
+			FAssetData NewAssetData;
+			NewAssetData.ObjectPath = FName(*(JsonAssetData[i]->AsObject()->GetStringField("ObjectPath")));
+			NewAssetData.PackageName = FName(*(JsonAssetData[i]->AsObject()->GetStringField("PackageName")));
+			NewAssetData.PackagePath = FName(*(JsonAssetData[i]->AsObject()->GetStringField("PackagePath")));
+			NewAssetData.AssetName = FName(*(JsonAssetData[i]->AsObject()->GetStringField("AssetName")));
+			NewAssetData.AssetClass = FName(*(JsonAssetData[i]->AsObject()->GetStringField("AssetClass")));
+
+			if (Filter(NewAssetData))
+			{
+				OutAssets.Add(NewAssetData);
+			}
 		}
 	}
 
@@ -158,11 +165,24 @@ namespace AssetValidationTools
 		       OutAssetData.Num());
 	}
 
-	void SearchAllAssetList_RuntimeMode(const FName& PackagePath, const FName& ClassName,
-	                                    TArray<FAssetData>& OutAssetData)
+	void SearchAllAssetList_RuntimeMode(
+		EAssetType AssetType, TArray<FAssetData>& OutAssetData)
 	{
-		ImportAssetListFromJson(UnrealStudyGlobalVar::SavedAssetJsonFile, OutAssetData);
-		UE_LOG(LogAssetValidationUtils, Verbose, TEXT("SearchAllAssetList_RuntimeMode, %s Asset Found. "),
+		using namespace UnrealStudyGlobalVar;
+		ImportAssetListFromJson(SavedAssetJsonFile, [=](FAssetData& AssetData)
+		{
+			using namespace UnrealStudyGlobalVar;
+			if (GAssetTypeToStrMap.Contains(AssetType))
+			{
+				FString AssetTypeVal = *GAssetTypeToStrMap.Find(AssetType);
+				if (AssetTypeVal.Equals(AssetData.AssetClass.ToString()))
+				{
+					return true;
+				}
+			}
+			return false;
+		}, OutAssetData);
+		UE_LOG(LogAssetValidationUtils, Verbose, TEXT("SearchAllAssetList_RuntimeMode, %d Asset Found. "),
 		       OutAssetData.Num());
 	}
 
@@ -235,7 +255,11 @@ namespace Test_AssetValidationTools
 		{
 			// @todo JSON 文件路径，需要修改到插件的 Content 目录，并且可打包
 			TArray<FAssetData> AssetData;
-			AssetValidationTools::ImportAssetListFromJson(UnrealStudyGlobalVar::SavedAssetJsonFile, AssetData);
+			AssetValidationTools::ImportAssetListFromJson(
+				UnrealStudyGlobalVar::SavedAssetJsonFile, [](FAssetData& AssetData)
+				{
+					return true;
+				}, AssetData);
 
 			for (const FAssetData& Asset : AssetData)
 			{
@@ -293,12 +317,11 @@ void UAssetValidationBPLibrary::SearchAssetList(TArray<FAssetDataInfo>& OutAsset
 {
 	OutAssetInfo.Empty();
 	TArray<FAssetData> FoundAssets;
-	// @todo 不限定资产类型以及搜索路径
 	// @todo 每次都需要重新搜索，最好做一个缓存
 #if WITH_EDITOR
 	AssetValidationTools::SearchAllAssetList_EditorMode(FName(TEXT("/Game")), Type, FoundAssets);
 #else
-	AssetValidationTools::SearchAllAssetList_RuntimeMode(FName(TEXT("/Game")), Type, FoundAssets);
+	AssetValidationTools::SearchAllAssetList_RuntimeMode(Type, FoundAssets);
 #endif
 
 	if (!SearchKey.IsEmpty())
