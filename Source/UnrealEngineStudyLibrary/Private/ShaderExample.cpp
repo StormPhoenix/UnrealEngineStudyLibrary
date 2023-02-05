@@ -86,6 +86,55 @@ namespace ShaderExample
 	TGlobalResource<FMyVertexBuffer> GMyVertexBuffer;
 	TGlobalResource<FMyIndexBuffer> GMyIndexBuffer;
 
+	// Compute Shader
+	class FMyComputerShader : public FGlobalShader
+	{
+		DECLARE_GLOBAL_SHADER(FMyComputerShader)
+	public:
+		static bool ShouldCompilePermutation(const FGlobalShaderPermutationParameters& Parameters)
+		{
+			return IsFeatureLevelSupported(Parameters.Platform, ERHIFeatureLevel::SM5);
+		}
+
+		static void ModifyCompilationEnvironment(const FGlobalShaderPermutationParameters& Parameters,
+		                                         FShaderCompilerEnvironment& OutEnvironment)
+		{
+		}
+
+		FMyComputerShader()
+		{
+		}
+
+		FMyComputerShader(const ShaderMetaType::CompiledShaderInitializerType& Initializer)
+			: FGlobalShader(Initializer)
+		{
+			OutSurface.Bind(Initializer.ParameterMap, TEXT("RWOutputSurface"));
+		}
+
+		void SetParameters(FRHICommandList& RHICmdList, FTexture2DRHIRef& InOutputSurfaceValue,
+		                   FUnorderedAccessViewRHIRef& InUAV)
+		{
+			// @todo 为什么计算着色器的的 ShaderRHI 是由外界传进来的
+			FRHIComputeShader* ShaderRHI = RHICmdList.GetBoundComputeShader();
+			if (OutSurface.IsBound())
+			{
+				RHICmdList.SetUAVParameter(ShaderRHI, OutSurface.GetBaseIndex(), InUAV);
+			}
+		}
+
+		void UnbindBuffers(FRHICommandList& RHICmdList)
+		{
+			FRHIComputeShader* ShaderRHI = RHICmdList.GetBoundComputeShader();
+			if (OutSurface.IsBound())
+			{
+				RHICmdList.SetUAVParameter(ShaderRHI, OutSurface.GetBaseIndex(), nullptr);
+			}
+		}
+
+	private:
+		LAYOUT_FIELD(FShaderResourceParameter, OutSurface);
+	};
+
 	class FSimpleExampleShader : public FGlobalShader
 	{
 		DECLARE_INLINE_TYPE_LAYOUT(FSimpleExampleShader, NonVirtual);
@@ -120,6 +169,7 @@ namespace ShaderExample
 		                   const FLinearColor& InColor, FTexture2DRHIRef InTexture,
 		                   FSimpleShaderParameter& ShaderParameter)
 		{
+			/* 参数 ShaderRHI 由外界传进来的 */
 			// 设置 float 类型数据
 			SetShaderValue(RHICmdList, ShaderRHI, MyColorVal, InColor);
 
@@ -174,7 +224,16 @@ namespace ShaderExample
 		}
 	};
 
+	// Implement uniforms
 	IMPLEMENT_GLOBAL_SHADER_PARAMETER_STRUCT(FSimpleUniformStructParameters, "SimpleUniformStruct");
+
+	// Implement shaders
+	IMPLEMENT_SHADER_TYPE(,
+		FMyComputerShader, TEXT("/UnrealEngineStudyLibrary/Private/ComputeShaderExample.usf"), TEXT("MainCS"),
+		SF_Compute);
+
+	// IMPLEMENT_GLOBAL_SHADER(FMyComputerShader, "/UnrealEngineStudyLibrary/Private/ComputeShaderExample.usf", "MainCS",
+	//                         SF_Compute);
 
 	IMPLEMENT_GLOBAL_SHADER(
 		FSimpleExampleShaderVS, "/UnrealEngineStudyLibrary/Private/SimpleExampleShader.usf", "MainVS", SF_Vertex);
