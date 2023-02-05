@@ -108,11 +108,12 @@ namespace ShaderExample
 		FMyComputerShader(const ShaderMetaType::CompiledShaderInitializerType& Initializer)
 			: FGlobalShader(Initializer)
 		{
-			OutSurface.Bind(Initializer.ParameterMap, TEXT("RWOutputSurface"));
+			OutSurface.Bind(Initializer.ParameterMap, TEXT("OutputSurface"));
+			// OutSurface.Bind(Initializer.ParameterMap, TEXT("RWOutputSurface"));
 		}
 
-		void SetParameters(FRHICommandList& RHICmdList, FTexture2DRHIRef& InOutputSurfaceValue,
-		                   FUnorderedAccessViewRHIRef& InUAV)
+		void SetParameters(FRHICommandList& RHICmdList, FUnorderedAccessViewRHIRef& InUAV,
+		                   FSimpleShaderParameter& ShaderParameter)
 		{
 			// @todo 为什么计算着色器的的 ShaderRHI 是由外界传进来的
 			FRHIComputeShader* ShaderRHI = RHICmdList.GetBoundComputeShader();
@@ -120,6 +121,16 @@ namespace ShaderExample
 			{
 				RHICmdList.SetUAVParameter(ShaderRHI, OutSurface.GetBaseIndex(), InUAV);
 			}
+			
+			FSimpleUniformStructParameters SimpleUniformData;
+			SimpleUniformData.Color1 = ShaderParameter.Color1;
+			SimpleUniformData.Color2 = ShaderParameter.Color2;
+			SimpleUniformData.Color3 = ShaderParameter.Color3;
+			SimpleUniformData.Color4 = ShaderParameter.Color4;
+			SimpleUniformData.ColorIndex = ShaderParameter.ColorIndex;
+			SetUniformBufferParameterImmediate(
+				RHICmdList, ShaderRHI, GetUniformBufferParameter<FSimpleUniformStructParameters>(),
+				SimpleUniformData);
 		}
 
 		void UnbindBuffers(FRHICommandList& RHICmdList)
@@ -283,6 +294,39 @@ namespace ShaderExample
 		RHICmdList.EndRenderPass();
 		RHICmdList.Transition(FRHITransitionInfo(RenderTargetRHI, ERHIAccess::RTV, ERHIAccess::SRVMask));
 	}
+
+	static void ComputeShaderDraw_RenderThread(
+		FRHICommandListImmediate& RHICmdList, FTextureRenderTargetResource* OutputRenderTargetResource,
+		ERHIFeatureLevel::Type FeatureLevel, FLinearColor InColor, FSimpleShaderParameter ShaderStructData)
+	{
+		check(IsInRenderingThread());
+		
+		FTexture2DRHIRef RenderTargetRHI = OutputRenderTargetResource->GetRenderTargetTexture();
+		uint32 GGroupSize = 32;
+		FIntPoint FullResolution = FIntPoint(RenderTargetRHI->GetSizeX(), RenderTargetRHI->GetSizeY());
+		uint32 GroupSizeX = FMath::DivideAndRoundUp((uint32) RenderTargetRHI->GetSizeX(), GGroupSize);
+		uint32 GroupSizeY = FMath::DivideAndRoundUp((uint32) RenderTargetRHI->GetSizeY(), GGroupSize);
+
+		// 绑定 ComputeShader 到当前的渲染状态中
+		FGlobalShaderMap* GlobalShaderMap = GetGlobalShaderMap(FeatureLevel);
+		TShaderMapRef<FMyComputerShader> ComputeShader(GlobalShaderMap);
+		RHICmdList.SetComputeShader(ComputeShader.GetComputeShader());
+
+		// 创建临时纹理，用于 ComputeShader 做绘制
+		FRHIResourceCreateInfo CreateInfo(TEXT("ShaderExample_ComputeShader_UAV"));
+		FTexture2DRHIRef OutSurfaceTexture = RHICreateTexture2D(RenderTargetRHI->GetSizeX(), RenderTargetRHI->GetSizeX(), PF_A32B32G32R32F, 1, 1, TexCreate_ShaderResource | TexCreate_UAV, CreateInfo);
+		FUnorderedAccessViewRHIRef OutSurfaceTextureUAV = RHICreateUnorderedAccessView(OutSurfaceTexture);
+
+		ComputeShader->SetParameters(RHICmdList, OutSurfaceTextureUAV, ShaderStructData);
+		DispatchComputeShader(RHICmdList, ComputeShader, GroupSizeX, GroupSizeX, 1);
+		ComputeShader->UnbindBuffers(RHICmdList);
+
+		// FRHICopyTextureInfo CopyInfo;
+		// RHICmdList.CopyTexture(OutSurfaceTexture, RenderTargetRHI, CopyInfo);
+		
+		DrawSimpleColorRenderTarget_RenderThread(
+			RHICmdList, OutputRenderTargetResource, FeatureLevel, InColor, OutSurfaceTexture, ShaderStructData);
+	}
 }
 
 void UShaderExampleBlueprintLibrary::DrawSimpleColorRenderTarget(
@@ -312,5 +356,33 @@ void UShaderExampleBlueprintLibrary::DrawSimpleColorRenderTarget(
 		}
 	);
 }
+
+void UShaderExampleBlueprintLibrary::ComputeShaderDraw(const UObject* WorldContext,
+	UTextureRenderTarget2D* OutputRenderTarget, FLinearColor InColor, FSimpleShaderParameter ShaderStructData)
+{
+	check(IsInGameThread());
+
+	if (OutputRenderTarget == nullptr)
+	{
+		return;
+	}
+
+	FTextureRenderTargetResource* TextureRenderTargetResource = OutputRenderTarget->
+		GameThread_GetRenderTargetResource();
+
+	const UWorld* World = WorldContext->GetWorld();
+	ERHIFeatureLevel::Type FeatureLevel = World->Scene->GetFeatureLevel();
+	FName TextureRenderTargetName = OutputRenderTarget->GetFName();
+	ENQUEUE_RENDER_COMMAND(CaptureCommand)(
+		[TextureRenderTargetResource, FeatureLevel, InColor,
+			ShaderStructData](FRHICommandListImmediate& RHICmdList)
+		{
+			ShaderExample::ComputeShaderDraw_RenderThread(
+				RHICmdList, TextureRenderTargetResource, FeatureLevel, InColor , ShaderStructData);
+		}
+	);
+	
+}
+
 
 #undef LOCTEXT_NAMESPACE

@@ -12,8 +12,14 @@ UCLASS(MinimalAPI, meta=(ScriptName="ShaderTestLibrary"))
 class UShaderExampleBlueprintLibrary : public UBlueprintFunctionLibrary
 {
 	GENERATED_UCLASS_BODY()
-	UFUNCTION(BlueprintCallable, Category = "SimpleColorTest", meta = (WorldContext = "WorldContextObject"))
+	
+	UFUNCTION(BlueprintCallable, Category = "ShaderExample", meta = (WorldContext = "WorldContext"))
 	static void DrawSimpleColorRenderTarget(
-		const UObject* WorldContextObject, class UTextureRenderTarget2D* OutputRenderTarget,
+		const UObject* WorldContext, class UTextureRenderTarget2D* OutputRenderTarget,
 		FLinearColor Color, UTexture2D* InTexture, FSimpleShaderParameter ShaderStructData);
+	
+	UFUNCTION(BlueprintCallable, Category = "ShaderExample", meta = (WorldContext = "WorldContext"))
+	static void ComputeShaderDraw(
+		const UObject* WorldContext, class UTextureRenderTarget2D* OutputRenderTarget,
+		FLinearColor Color, FSimpleShaderParameter ShaderStructData);
 };
