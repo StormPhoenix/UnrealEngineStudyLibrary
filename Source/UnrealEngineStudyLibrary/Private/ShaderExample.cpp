@@ -300,9 +300,10 @@ namespace ShaderExample
 		ERHIFeatureLevel::Type FeatureLevel, FLinearColor InColor, FSimpleShaderParameter ShaderStructData)
 	{
 		check(IsInRenderingThread());
-		
-		FTexture2DRHIRef RenderTargetRHI = OutputRenderTargetResource->GetRenderTargetTexture();
+
+		// 初始化 Compute Shader 内线程块数量
 		uint32 GGroupSize = 32;
+		FTexture2DRHIRef RenderTargetRHI = OutputRenderTargetResource->GetRenderTargetTexture();
 		FIntPoint FullResolution = FIntPoint(RenderTargetRHI->GetSizeX(), RenderTargetRHI->GetSizeY());
 		uint32 GroupSizeX = FMath::DivideAndRoundUp((uint32) RenderTargetRHI->GetSizeX(), GGroupSize);
 		uint32 GroupSizeY = FMath::DivideAndRoundUp((uint32) RenderTargetRHI->GetSizeY(), GGroupSize);
@@ -312,18 +313,23 @@ namespace ShaderExample
 		TShaderMapRef<FMyComputerShader> ComputeShader(GlobalShaderMap);
 		RHICmdList.SetComputeShader(ComputeShader.GetComputeShader());
 
-		// 创建临时纹理，用于 ComputeShader 做绘制
+		// 创建临时纹理，用于 ComputeShader 做绘制。该绘制结果最终将存储到临时纹理中.
 		FRHIResourceCreateInfo CreateInfo(TEXT("ShaderExample_ComputeShader_UAV"));
 		FTexture2DRHIRef OutSurfaceTexture = RHICreateTexture2D(RenderTargetRHI->GetSizeX(), RenderTargetRHI->GetSizeX(), PF_A32B32G32R32F, 1, 1, TexCreate_ShaderResource | TexCreate_UAV, CreateInfo);
+		// 将临时纹理封装成 UAV
 		FUnorderedAccessViewRHIRef OutSurfaceTextureUAV = RHICreateUnorderedAccessView(OutSurfaceTexture);
 
+		// 绑定 UAV 到 Compute Shader
 		ComputeShader->SetParameters(RHICmdList, OutSurfaceTextureUAV, ShaderStructData);
-		DispatchComputeShader(RHICmdList, ComputeShader, GroupSizeX, GroupSizeX, 1);
+		// Compute Shader 开始执行计算
+		DispatchComputeShader(RHICmdList, ComputeShader, GroupSizeX, GroupSizeY, 1);
+		// 解绑 UAV
 		ComputeShader->UnbindBuffers(RHICmdList);
 
 		// FRHICopyTextureInfo CopyInfo;
 		// RHICmdList.CopyTexture(OutSurfaceTexture, RenderTargetRHI, CopyInfo);
-		
+
+		// 将临时纹理作为参数，后续步骤将进行采样
 		DrawSimpleColorRenderTarget_RenderThread(
 			RHICmdList, OutputRenderTargetResource, FeatureLevel, InColor, OutSurfaceTexture, ShaderStructData);
 	}
