@@ -198,7 +198,7 @@ namespace AssetValidationTools
 		AStaticMeshActor* MyNewActor =
 			WorldContext->GetWorld()->SpawnActor<AStaticMeshActor>(AStaticMeshActor::StaticClass());
 		MyNewActor->SetActorTransform(InTransform);
-		MyNewActor->SetMobility(EComponentMobility::Stationary);
+		MyNewActor->SetMobility(EComponentMobility::Movable);
 		UStaticMeshComponent* MeshComponent = MyNewActor->GetStaticMeshComponent();
 		if (MeshComponent)
 		{
@@ -365,7 +365,7 @@ void UAssetValidationBPLibrary::PackageAssetDataToJson()
 #endif
 }
 
-void UAssetValidationBPLibrary::SpawnActorFromAsset(
+AStaticMeshActor* UAssetValidationBPLibrary::SpawnActorFromAsset(
 	const UObject* WorldContext, const FAssetDataInfo& AssetDataInfo,
 	const FTransform& NewTransform, FAssetDisplayInfo& OutDisplayInfo)
 {
@@ -378,11 +378,12 @@ void UAssetValidationBPLibrary::SpawnActorFromAsset(
 	case EAssetType::StaticMesh:
 		AssetValidationTools::CreateStaticMeshActor(
 			WorldContext, AssetDataInfo.AssetRefPath, NewTransform, OutDisplayInfo);
-		break;
+		return AssetValidationTools::SpawnedMeshActor.Get();
 	default:
 		UE_LOG(LogAssetValidationUtils, Warning, TEXT("Asset type %s not supported."), *AssetDataInfo.AssetClass);
 		break;
 	}
+	return nullptr;
 }
 
 void AssetValidationTools::Initialize()

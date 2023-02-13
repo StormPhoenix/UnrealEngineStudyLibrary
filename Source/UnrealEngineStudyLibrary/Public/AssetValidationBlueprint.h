@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 #include "UObject/Object.h"
 #include "AssetValidationUtils.h"
+#include "Engine/StaticMeshActor.h"
 #include "Engine/Classes/Kismet/BlueprintFunctionLibrary.h"
 #include "AssetValidationBlueprint.generated.h"
 
@@ -26,6 +27,7 @@ class UAssetValidationBPLibrary : public UBlueprintFunctionLibrary
 	static void PackageAssetDataToJson();
 
 	UFUNCTION(BlueprintCallable, Category = "AssetValidationUtils", meta = (WorldContext = "WorldContext"))
-	static void SpawnActorFromAsset(const UObject* WorldContext, const FAssetDataInfo& AssetDataInfo,
-	                                const FTransform& NewTransform, FAssetDisplayInfo& OutDisplayInfo);
+	static AStaticMeshActor* SpawnActorFromAsset(
+		const UObject* WorldContext, const FAssetDataInfo& AssetDataInfo, const FTransform& NewTransform,
+		FAssetDisplayInfo& OutDisplayInfo);
 };
