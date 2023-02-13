@@ -22,30 +22,25 @@ namespace AssetInfoCollector
 				const int32 NumVerts = LODModel.GetNumVertices();
 				const int32 NumTris = LODModel.GetNumTriangles();
 
-				Value = FText::Format(
-					NSLOCTEXT("AssetValidation", "Vertices_F", "{0}"),
-					FText::AsNumber(NumVerts)).ToString();
+				Value = FText::Format(NSLOCTEXT("AssetValidation", "Vertices_F", "{0}"),
+				                      FText::AsNumber(NumVerts)).ToString();
 				OutDisplayInfo.AddInfo(FString("Vertices"), Value);
 
-				Value = FText::Format(
-					NSLOCTEXT("AssetValidation", "Triangles_F", "{0}"),
-					FText::AsNumber(NumTris)).ToString();
+				Value = FText::Format(NSLOCTEXT("AssetValidation", "Triangles_F", "{0}"),
+				                      FText::AsNumber(NumTris)).ToString();
 				OutDisplayInfo.AddInfo(FString("Triangels"), Value);
 
-				Value = FText::Format(
-					NSLOCTEXT("AssetValidation", "LODs_F", "{0}"),
-					FText::AsNumber(LODNum)).ToString();
+				Value = FText::Format(NSLOCTEXT("AssetValidation", "LODs_F", "{0}"),
+				                      FText::AsNumber(LODNum)).ToString();
 				OutDisplayInfo.AddInfo(FString("LODs"), Value);
 
-				Value = FText::Format(
-					NSLOCTEXT("AssetValidation", "Materials_F", "{0}"),
-					FText::AsNumber(MatNum)).ToString();
+				Value = FText::Format(NSLOCTEXT("AssetValidation", "Materials_F", "{0}"),
+				                      FText::AsNumber(MatNum)).ToString();
 				OutDisplayInfo.AddInfo(FString("Materials"), Value);
 #if WITH_EDITOR
 				const int32 NumUVChannels = StaticMesh->GetNumUVChannels(0);
-				Value = FText::Format(
-					NSLOCTEXT("AssetValidation", "UVChannels_F", "{0}"),
-					FText::AsNumber(NumUVChannels)).ToString();
+				Value = FText::Format(NSLOCTEXT("AssetValidation", "UVChannels_F", "{0}"),
+				                      FText::AsNumber(NumUVChannels)).ToString();
 				OutDisplayInfo.AddInfo(FString("UV Channels"), Value);
 #endif
 			}
@@ -58,6 +53,12 @@ namespace AssetInfoCollector
 					FText::AsNumber(int32(StaticMesh->GetBounds().BoxExtent.Y * 2.0f)),
 					FText::AsNumber(int32(StaticMesh->GetBounds().BoxExtent.Z * 2.0f))).ToString();
 				OutDisplayInfo.AddInfo(Key, Value);
+
+				OutDisplayInfo.ApproxSize = {
+					StaticMesh->GetBounds().BoxExtent.X * 2,
+					StaticMesh->GetBounds().BoxExtent.Y * 2,
+					StaticMesh->GetBounds().BoxExtent.Z * 2
+				};
 			}
 		}
 	}
