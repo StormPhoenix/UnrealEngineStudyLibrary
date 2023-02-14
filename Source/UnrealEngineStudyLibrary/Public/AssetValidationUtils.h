@@ -10,6 +10,9 @@
 USTRUCT(BlueprintType)
 struct FAssetDataInfo
 {
+	/**
+	 * 资产元数据
+	 */
 	GENERATED_BODY()
 
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category="AssetValidationUtils")
@@ -25,6 +28,9 @@ struct FAssetDataInfo
 USTRUCT(BlueprintType)
 struct FAssetDisplayInfo
 {
+	/**
+	 * 资产可展示信息、必要日志警告等
+	 */
 	GENERATED_BODY()
 
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category="AssetValidationUtils")
@@ -38,7 +44,7 @@ struct FAssetDisplayInfo
 
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category="AssetValidationUtils")
 	TArray<FString> PrintMessages;
-
+	
 	void AddInfo(FString Key, FString Value)
 	{
 		DisplayKeys.Add(Key);
