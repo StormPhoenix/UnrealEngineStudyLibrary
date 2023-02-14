@@ -188,6 +188,21 @@ namespace AssetValidationTools
 
 	static TWeakObjectPtr<AStaticMeshActor> SpawnedMeshActor = nullptr;
 
+	bool CheckIsMaterialLost(const UStaticMesh* InMesh)
+	{
+		bool IsMaterialLost = false;
+		const TArray<FStaticMaterial>& StaticMaterials = InMesh->GetStaticMaterials();
+		for (const FStaticMaterial& Material : StaticMaterials)
+		{
+			if (Material.MaterialInterface == nullptr)
+			{
+				IsMaterialLost = true;
+				break;
+			}
+		}
+		return IsMaterialLost;
+	}
+
 	void SpawnStaticMesh(const UObject* WorldContext, UStaticMesh* StaticMesh, const FTransform& InTransform)
 	{
 		if (StaticMesh == nullptr)
@@ -213,19 +228,20 @@ namespace AssetValidationTools
 		SpawnedMeshActor = MyNewActor;
 	}
 
-	void CreateStaticMeshActor(const UObject* WorldContext, const FString& AssetRefPath,
+	void CreateStaticMeshActor(const UObject* WorldContext, const FAssetDataInfo& InAssetData,
 	                           const FTransform& InTransform, FAssetDisplayInfo& OutInfo)
 	{
-		if (AssetRefPath.IsEmpty())
+		if (InAssetData.AssetRefPath.IsEmpty())
 		{
 			UE_LOG(LogAssetValidationUtils, Warning, TEXT("Load Asset failed, asset path empty. "));
 			return;
 		}
 
-		UStaticMesh* Mesh = LoadObject<UStaticMesh>(nullptr, *AssetRefPath);
+		UStaticMesh* Mesh = LoadObject<UStaticMesh>(nullptr, *InAssetData.AssetRefPath);
 		if (Mesh == nullptr)
 		{
-			UE_LOG(LogAssetValidationUtils, Warning, TEXT("Load Asset failed, asset path %s."), *AssetRefPath);
+			UE_LOG(LogAssetValidationUtils, Warning, TEXT("Load Asset failed, asset path %s."),
+			       *InAssetData.AssetRefPath);
 			return;
 		}
 
@@ -236,6 +252,59 @@ namespace AssetValidationTools
 
 		AssetInfoCollector::CollectAssetInfo<UStaticMesh>(Mesh, OutInfo);
 		SpawnStaticMesh(WorldContext, Mesh, InTransform);
+
+		// Setup print message
+		if (CheckIsMaterialLost(Mesh))
+		{
+			FString CheckMaterialMessage =
+				FText::Format(NSLOCTEXT("AssetValidation", "CheckMaterial", "{0}'s material is LOST."),
+				              FText::FromString(InAssetData.AssetName)).ToString();
+			OutInfo.AddPrintMessage(CheckMaterialMessage);
+		}
+	}
+
+	void CheckAllStaticMeshesAssets(FAssetDisplayInfo& OutInfo)
+	{
+		TArray<FAssetData> FoundAssets;
+		// @todo 每次都需要重新搜索，最好做一个缓存
+#if WITH_EDITOR
+		SearchAllAssetList_EditorMode(
+			FName(TEXT("/Game")), EAssetType::StaticMesh, FoundAssets);
+#else
+	AssetValidationTools::SearchAllAssetList_RuntimeMode(EAssetType::StaticMesh, FoundAssets);
+#endif
+		for (const FAssetData& AssetData : FoundAssets)
+		{
+			FAssetDataInfo AssetDataInfo;
+			ParseAssetData(AssetData, AssetDataInfo);
+
+			if (!AssetDataInfo.AssetRefPath.IsEmpty())
+			{
+				UStaticMesh* Mesh = LoadObject<UStaticMesh>(nullptr, *AssetDataInfo.AssetRefPath);
+				if (Mesh == nullptr)
+				{
+					FString Message = FText::Format(
+						NSLOCTEXT("AssetValidation", "CheckMaterial", "{0} can't be loaded."),
+						FText::FromString(AssetDataInfo.AssetName)).ToString();
+					OutInfo.AddPrintMessage(Message);
+					continue;
+				}
+
+				if (CheckIsMaterialLost(Mesh))
+				{
+					FString Message =
+						FText::Format(NSLOCTEXT("AssetValidation", "CheckMaterial", "AssetCheck: {0}'s material is LOST."),
+						              FText::FromString(AssetDataInfo.AssetName)).ToString();
+					OutInfo.AddPrintMessage(Message);
+				}
+
+				{
+					// @todo 是否 / 如何手动释放资源？
+					// Mesh->ReleaseResources();
+					// delete Mesh;
+				}
+			}
+		}
 	}
 }
 
@@ -365,19 +434,25 @@ void UAssetValidationBPLibrary::PackageAssetDataToJson()
 #endif
 }
 
+void UAssetValidationBPLibrary::CheckAllStaticMeshAssets(const UObject* WorldContext, FAssetDisplayInfo& OutDisplayInfo)
+{
+	OutDisplayInfo.Clear();
+	AssetValidationTools::CheckAllStaticMeshesAssets(OutDisplayInfo);
+}
+
+
 AStaticMeshActor* UAssetValidationBPLibrary::SpawnActorFromAsset(
 	const UObject* WorldContext, const FAssetDataInfo& AssetDataInfo,
 	const FTransform& NewTransform, FAssetDisplayInfo& OutDisplayInfo)
 {
-	OutDisplayInfo.DisplayKeys.Empty();
-	OutDisplayInfo.DisplayValues.Empty();
+	OutDisplayInfo.Clear();
 
 	EAssetType AssetType = AssetValidationTools::ParseAssetTypeFromName(AssetDataInfo.AssetClass);
 	switch (AssetType)
 	{
 	case EAssetType::StaticMesh:
 		AssetValidationTools::CreateStaticMeshActor(
-			WorldContext, AssetDataInfo.AssetRefPath, NewTransform, OutDisplayInfo);
+			WorldContext, AssetDataInfo, NewTransform, OutDisplayInfo);
 		return AssetValidationTools::SpawnedMeshActor.Get();
 	default:
 		UE_LOG(LogAssetValidationUtils, Warning, TEXT("Asset type %s not supported."), *AssetDataInfo.AssetClass);

@@ -30,4 +30,7 @@ class UAssetValidationBPLibrary : public UBlueprintFunctionLibrary
 	static AStaticMeshActor* SpawnActorFromAsset(
 		const UObject* WorldContext, const FAssetDataInfo& AssetDataInfo, const FTransform& NewTransform,
 		FAssetDisplayInfo& OutDisplayInfo);
+
+	UFUNCTION(BlueprintCallable, Category = "AssetValidationUtils", meta = (WorldContext = "WorldContext"))
+	static void CheckAllStaticMeshAssets(const UObject* WorldContext, FAssetDisplayInfo& OutDisplayInfo);
 };

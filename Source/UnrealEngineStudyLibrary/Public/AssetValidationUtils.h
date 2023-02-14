@@ -4,6 +4,9 @@
 #include "UObject/Object.h"
 #include "AssetValidationUtils.generated.h"
 
+// #define GET_FORMAT_PRINT_MESSAGE(InNamespace) \
+// 	FText::Format(NSLOCTEXT("AssetValidation", TEXT(InNamespace), "{0}"),);
+
 USTRUCT(BlueprintType)
 struct FAssetDataInfo
 {
@@ -33,10 +36,25 @@ struct FAssetDisplayInfo
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category="AssetValidationUtils")
 	FVector ApproxSize{0, 0, 0};
 
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category="AssetValidationUtils")
+	TArray<FString> PrintMessages;
+
 	void AddInfo(FString Key, FString Value)
 	{
 		DisplayKeys.Add(Key);
 		DisplayValues.Add(Value);
+	}
+
+	void AddPrintMessage(FString Message)
+	{
+		PrintMessages.Add(Message);
+	}
+
+	void Clear()
+	{
+		DisplayKeys.Empty();
+		DisplayValues.Empty();
+		PrintMessages.Empty();
 	}
 };
 
